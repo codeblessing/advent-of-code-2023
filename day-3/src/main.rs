@@ -34,17 +34,18 @@ fn main() {
         return;
     };
 
+    // We have to add 1, because lines() removes new line character from &str.
     let line_length = contents.lines().take(1).map(str::len).sum::<usize>() + 1;
 
-    let digit_pattern = Regex::new(r"(\d+)").expect("Invalid pattern");
-    let symbol_pattern = Regex::new(r"([^\d\.\n\r])").expect("Invalid symbol pattern");
+    let numbers = Regex::new(r"(\d+)").expect("Invalid pattern");
+    let symbols = Regex::new(r"([^\d\.\n\r])").expect("Invalid symbol pattern");
 
-    let mut numbers = digit_pattern
+    let mut numbers = numbers
         .captures_iter(contents.as_str())
         .filter_map(|captures| captures.get(0))
         .map(|element| element.range())
         .collect::<Vec<_>>();
-    let symbols = symbol_pattern
+    let symbols = symbols
         .captures_iter(contents.as_str())
         .filter_map(|captures| captures.get(0))
         .map(|element| element.range())
@@ -63,34 +64,12 @@ fn main() {
                 })
         });
 
-    // let show_numbers: Vec<_> = numbers
-    //     .iter()
-    //     .map(|range| &contents[range.clone()])
-    //     .collect();
-    // let show_symbols: Vec<_> = symbols
-    //     .iter()
-    //     .map(|range| &contents[range.clone()])
-    //     .collect();
-
-    // debug!("{show_numbers:?}");
-    // debug!("{show_symbols:?}");
-
     let sum = numbers
         .into_iter()
         .filter_map(|range| contents[range].parse::<i64>().ok())
         .sum::<i64>();
 
     println!("{sum}");
-    // let mut replaced = contents.to_string();
-
-    // for number in numbers {
-    //     replaced.replace_range(
-    //         number.clone(),
-    //         repeat_n('.', number.len()).collect::<String>().as_str(),
-    //     );
-    // }
-
-    // print!("{replaced}");
 }
 
 #[derive(Parser)]
