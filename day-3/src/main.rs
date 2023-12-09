@@ -3,6 +3,7 @@
 use std::path::PathBuf;
 
 use clap::{ArgAction, Parser};
+use itertools::Itertools;
 use regex::Regex;
 use tracing::{error, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -34,6 +35,53 @@ fn main() {
         return;
     };
 
+    // Part I
+    sum_part_numbers(contents.as_str());
+
+    // Part II
+    sum_gear_ratios(contents.as_str());
+}
+
+fn sum_gear_ratios(contents: &str) {
+    // We have to add 1, because lines() removes new line character from &str.
+    let line_length = contents.lines().take(1).map(str::len).sum::<usize>() + 1;
+
+    let numbers = Regex::new(r"(\d+)").expect("Invalid pattern");
+    let symbols = Regex::new(r"([^\d\.\n\r])").expect("Invalid symbol pattern");
+
+    let numbers = numbers
+        .captures_iter(contents)
+        .filter_map(|captures| captures.get(0))
+        .map(|element| element.range())
+        .collect::<Vec<_>>();
+    let symbols = symbols
+        .captures_iter(contents)
+        .filter_map(|captures| captures.get(0))
+        .filter(|symbol| symbol.as_str() == "*")
+        .enumerate()
+        .map(|(index, element)| (index, element.range()))
+        .collect::<Vec<_>>();
+
+    let sum = symbols.into_iter().map(|(_, symbol)| {
+        numbers.iter().filter(|number|{
+            number.start.saturating_sub(1 + line_length) <= symbol.start && number.end.saturating_sub(line_length - 1) >= symbol.end ||
+            // Check current line for symbol.
+            number.start.saturating_sub(1) <= symbol.start && number.end.saturating_add(1) >= symbol.end ||
+            // Check next line for symbol.
+            number.start.saturating_add(line_length - 1) <= symbol.start && number.end.saturating_add(line_length + 1) >= symbol.end
+        })
+        .unique()
+        .cloned()
+        .collect::<Vec<_>>()
+    })
+    .filter(|group| group.len() == 2)
+    .map(|group| group.into_iter().filter_map(|number| contents[number].parse::<i64>().ok()).product::<i64>())
+    .sum::<i64>();
+
+    println!("{sum}");
+}
+
+fn sum_part_numbers(contents: &str) {
     // We have to add 1, because lines() removes new line character from &str.
     let line_length = contents.lines().take(1).map(str::len).sum::<usize>() + 1;
 
@@ -41,12 +89,12 @@ fn main() {
     let symbols = Regex::new(r"([^\d\.\n\r])").expect("Invalid symbol pattern");
 
     let mut numbers = numbers
-        .captures_iter(contents.as_str())
+        .captures_iter(contents)
         .filter_map(|captures| captures.get(0))
         .map(|element| element.range())
         .collect::<Vec<_>>();
     let symbols = symbols
-        .captures_iter(contents.as_str())
+        .captures_iter(contents)
         .filter_map(|captures| captures.get(0))
         .map(|element| element.range())
         .collect::<Vec<_>>();
