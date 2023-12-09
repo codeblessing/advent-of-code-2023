@@ -36,15 +36,25 @@ fn main() {
 
     // Part I
     total_cards_score(contents.as_str());
+
+    // Part II
+    let cards_count = count_total_cards(contents.as_str());
+
+    println!("{cards_count}");
 }
 
 fn total_cards_score(cards: &str) {
-    let total_score = cards.lines().map(card_point_score).sum::<i32>();
+    let point_score = |count: usize| if count == 0 { 0 } else { 1 << (count - 1) };
+    let total_score = cards
+        .lines()
+        .map(winning_numbers_count)
+        .map(point_score)
+        .sum::<i32>();
 
     println!("{total_score}");
 }
 
-fn card_point_score(card: &str) -> i32 {
+fn winning_numbers_count(card: &str) -> usize {
     let offset = card.find(':').unwrap_or(0);
     if let Some((winning, mut owned)) = card[offset..]
         .split('|')
@@ -58,13 +68,47 @@ fn card_point_score(card: &str) -> i32 {
         .collect_tuple()
     {
         owned.retain(|element| winning.contains(element));
-        let offset = owned.len();
-        if offset != 0 {
-            return 1 << (offset - 1);
-        }
+        return owned.len();
     }
 
     0
+}
+
+fn create_replication_table(cards: &str) -> Vec<Replication> {
+    let mut replication_table = cards
+        .lines()
+        .map(winning_numbers_count)
+        .map(|score| Replication {
+            factor: 1,
+            record: score,
+        })
+        .collect::<Vec<_>>();
+
+    for index in 0..replication_table.len() {
+        let root = replication_table[index];
+        for replication in replication_table
+            .iter_mut()
+            .skip(index + 1)
+            .take(root.record)
+        {
+            replication.factor += root.factor;
+        }
+    }
+
+    replication_table
+}
+
+fn count_total_cards(cards: &str) -> usize {
+    create_replication_table(cards)
+        .into_iter()
+        .map(|replication| replication.factor)
+        .sum::<usize>()
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+struct Replication {
+    factor: usize,
+    record: usize,
 }
 
 #[derive(Parser)]
