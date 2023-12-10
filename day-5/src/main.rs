@@ -77,8 +77,6 @@ fn main() {
         })
         .collect::<Vec<_>>();
 
-    // println!("Seed count: {}", seeds.len());
-
     let mapping = seed_to_location(maps);
 
     let location = seeds.into_iter().flat_map(IntoIterator::into_iter).map(mapping).min().unwrap();
@@ -109,11 +107,6 @@ fn seed_to_location(maps: &[&str]) -> impl Fn(usize) -> usize {
         })
         .map(|(name, mappings)| (name.trim_end_matches(" map").to_owned(), mappings))
         .collect::<HashMap<_, _>>();
-
-    let max_span =  {
-        let (start, end): (Vec<_>, Vec<_>) = maps.values().flatten().map(|(src, _)| (src.start, src.end)).unzip();
-        (start.into_iter().min().unwrap_or(0), end.into_iter().max().unwrap_or(0))
-    };
 
     move |input: usize| {
         let map_names = [
