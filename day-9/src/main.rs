@@ -39,6 +39,28 @@ fn main() {
     let sum = sum_of_successors(contents.as_str());
     println!("{sum}");
     // Part II
+    let sum = sum_of_predecessors(contents.as_str());
+    println!("{sum}");
+}
+
+fn sum_of_predecessors(contents: &str) -> i64 {
+    let lists = parse_list(contents);
+
+    lists
+        .into_iter()
+        .map(|list| {
+            let mut firsts = vec![list.first().copied().unwrap()];
+            let mut current = generate_diff_list(&list);
+
+            // We generate difference lists until there's no difference between elements.
+            while !current.iter().all(|num| num == &0) {
+                firsts.push(current.first().copied().unwrap());
+                current = generate_diff_list(current.as_slice());
+            }
+
+            firsts.into_iter().rev().reduce(|last, curr| curr - last).unwrap_or_default()
+        })
+        .sum::<i64>()
 }
 
 fn sum_of_successors(contents: &str) -> i64 {
